@@ -86,7 +86,7 @@ public struct XMMain {
 
     func exportXCStringsFile(_ tableName: String, _ xcstrings: XCStrings, _ outputPath: String, _ verbose: Bool) throws {
         let encoder = JSONEncoder()
-        encoder.outputFormatting = .prettyPrinted
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
         let data = try encoder.encode(xcstrings)
         if verbose, let jsonString = String(data: data, encoding: .utf8) {
             Swift.print(jsonString)
