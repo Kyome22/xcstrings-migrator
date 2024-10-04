@@ -5,3 +5,6 @@ Package.resolved
 /Packages
 /*.xcodeproj
 xcuserdata/
+/*.xcstrings
+/*.lproj
+/*.strings
