@@ -22,11 +22,18 @@ struct XM: ParsableCommand {
     )
     var outputPath: String
 
+    @Flag(
+        name: [.customShort("v"), .customLong("verbose")],
+        help: "Do not output warnings."
+    )
+    var verbose: Bool = false
+
     mutating func run() throws {
         do {
             try XMMain.run(
                 paths: paths,
-                outputPath: outputPath
+                outputPath: outputPath,
+                verbose: verbose
             )
         } catch let error as XMError {
             Swift.print("error:", error.errorDescription!)

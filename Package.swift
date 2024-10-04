@@ -31,7 +31,10 @@ let package = Package(
             ]
         ),
         .target(
-            name: "XCStringsMigrator"
+            name: "XCStringsMigrator",
+            swiftSettings: [
+                .enableUpcomingFeature("BareSlashRegexLiterals"),
+            ]
         ),
     ]
 )
