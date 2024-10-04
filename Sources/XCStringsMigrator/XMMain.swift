@@ -1,10 +1,15 @@
 import Foundation
 
 public struct XMMain {
-    public static func run(paths: [String], outputPath: String, verbose: Bool) throws {
+    public static func run(
+        sourceLanguage: String,
+        paths: [String],
+        outputPath: String,
+        verbose: Bool
+    ) throws {
         let xm = XMMain()
         let stringsData = xm.extractStringsData(paths)
-        let xcstrings = xm.convertXCStrings(stringsData)
+        let xcstrings = xm.convertXCStrings(sourceLanguage, stringsData)
         try xm.exportXCStringsFile(xcstrings, outputPath, verbose)
     }
 
@@ -51,7 +56,7 @@ public struct XMMain {
             }
     }
 
-    func convertXCStrings(_ stringsData: [StringsData]) -> XCStrings {
+    func convertXCStrings(_ sourceLanguage: String, _ stringsData: [StringsData]) -> XCStrings {
         var strings = [String: Strings]()
         stringsData.forEach { item in
             item.values.forEach { keyValue in
@@ -67,7 +72,7 @@ public struct XMMain {
             }
         }
         return XCStrings(
-            sourceLanguage: "en",
+            sourceLanguage: sourceLanguage,
             strings: strings,
             version: "1.0"
         )

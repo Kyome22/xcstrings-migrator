@@ -10,6 +10,12 @@ struct XM: ParsableCommand {
     )
 
     @Option(
+        name: [.customShort("l"), .customLong("source-language")],
+        help: "Source language of the xcstrings file."
+    )
+    var sourceLanguage: String = "en"
+
+    @Option(
         name: [.customShort("p"), .customLong("path")],
         parsing: ArrayParsingStrategy.singleValue,
         help: "Path to the lproj directory."
@@ -31,6 +37,7 @@ struct XM: ParsableCommand {
     mutating func run() throws {
         do {
             try XMMain.run(
+                sourceLanguage: sourceLanguage,
                 paths: paths,
                 outputPath: outputPath,
                 verbose: verbose
