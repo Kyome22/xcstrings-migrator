@@ -49,14 +49,15 @@ public struct XMMain {
                 return (language, urls)
             }
         var tables = [String: [StringsData]]()
-        stringsFiles.forEach { item in
-            item.1.forEach { url in
+        stringsFiles.forEach { (language, urls) in
+            urls.forEach { url in
                 let tableName = url.deletingPathExtension().lastPathComponent
                 if let dict = extractKeyValue(url: url) {
+                    let data = StringsData(language: language, values: dict)
                     if tables.keys.contains(tableName) {
-                        tables[tableName]?.append(StringsData(language: item.0, values: dict))
+                        tables[tableName]?.append(data)
                     } else {
-                        tables[tableName] = [StringsData(language: item.0, values: dict)]
+                        tables[tableName] = [data]
                     }
                 }
             }
@@ -67,15 +68,12 @@ public struct XMMain {
     func convertXCStrings(_ sourceLanguage: String, _ stringsData: [StringsData]) -> XCStrings {
         var strings = [String: Strings]()
         stringsData.forEach { item in
-            item.values.forEach { keyValue in
-                if strings.keys.contains(keyValue.key) {
-                    strings[keyValue.key]?.localizations[item.language] = Localization(stringUnit: StringUnit(value: keyValue.value))
+            item.values.forEach { (key, value) in
+                let localization = Localization(stringUnit: StringUnit(value: value))
+                if strings.keys.contains(key) {
+                    strings[key]?.localizations[item.language] = localization
                 } else {
-                    strings[keyValue.key] = Strings(
-                        localizations: [
-                            item.language: Localization(stringUnit: StringUnit(value: keyValue.value))
-                        ]
-                    )
+                    strings[key] = Strings(localizations: [item.language: localization])
                 }
             }
         }
