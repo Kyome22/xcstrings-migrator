@@ -1,17 +1,17 @@
 import Foundation
 
 public enum XMError: LocalizedError {
-    case none
+    case failedToExport
 
     public var errorDescription: String? {
         switch self {
-        case .none: "none"
+        case .failedToExport: "Failed to export xcstrings files."
         }
     }
 
     public var exitCode: Int32 {
         switch self {
-        case .none: 1
+        case .failedToExport: 1
         }
     }
 }

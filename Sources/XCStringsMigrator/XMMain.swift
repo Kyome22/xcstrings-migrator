@@ -8,14 +8,15 @@ public struct XMMain {
         verbose: Bool
     ) throws {
         let xm = XMMain()
-        let stringsDataTable = xm.extractStringsData(paths)
-        try stringsDataTable.forEach { item in
-            let xcstrings = xm.convertXCStrings(sourceLanguage, item.value)
-            try xm.exportXCStringsFile(item.key, xcstrings, outputPath, verbose)
+        let array = xm.extractStringsData(from: paths)
+        let dict = xm.classifyStringsData(with: array)
+        try dict.forEach { key, value in
+            let xcstrings = xm.convertToXCStrings(from: value, with: sourceLanguage)
+            try xm.exportXCStringsFile(name: key, xcstrings, outputPath, verbose)
         }
     }
 
-    func extractKeyValue(url: URL) -> [String: String]? {
+    func extractKeyValue(from url: URL) -> [String: String]? {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else {
             return nil
         }
@@ -32,48 +33,48 @@ public struct XMMain {
         return values
     }
 
-    func extractStringsData(_ paths: [String]) -> [String: [StringsData]] {
+    func extractStringsData(from paths: [String]) -> [StringsData] {
         let stringsFiles = paths
             .map { URL(filePath: $0) }
             .filter { url in
                 url.pathExtension == "lproj" && FileManager.default.fileExists(atPath: url.path())
             }
-            .map { url -> (String, [URL]) in
-                let language = url.deletingPathExtension().lastPathComponent
+            .flatMap { url -> [StringsFile] in
                 guard let contents = try? FileManager.default.contentsOfDirectory(atPath: url.path()) else {
-                    return (language, [])
+                    return []
                 }
-                let urls = contents
+                let language = url.deletingPathExtension().lastPathComponent
+                return contents
                     .map { url.appending(component: $0) }
                     .filter { $0.pathExtension == "strings" }
-                return (language, urls)
+                    .map { StringsFile(language: language, url: $0) }
             }
-        var tables = [String: [StringsData]]()
-        stringsFiles.forEach { (language, urls) in
-            urls.forEach { url in
-                let tableName = url.deletingPathExtension().lastPathComponent
-                if let dict = extractKeyValue(url: url) {
-                    let data = StringsData(language: language, values: dict)
-                    if tables.keys.contains(tableName) {
-                        tables[tableName]?.append(data)
-                    } else {
-                        tables[tableName] = [data]
-                    }
-                }
-            }
+        return stringsFiles.compactMap { stringsFile in
+            guard let values = extractKeyValue(from: stringsFile.url) else { return nil }
+            let tableName = stringsFile.url.deletingPathExtension().lastPathComponent
+            return StringsData(tableName: tableName, language: stringsFile.language, values: values)
         }
-        return tables
     }
 
-    func convertXCStrings(_ sourceLanguage: String, _ stringsData: [StringsData]) -> XCStrings {
-        var strings = [String: Strings]()
-        stringsData.forEach { item in
-            item.values.forEach { (key, value) in
-                let localization = Localization(stringUnit: StringUnit(value: value))
-                if strings.keys.contains(key) {
-                    strings[key]?.localizations[item.language] = localization
+    func classifyStringsData(with array: [StringsData]) -> [String: [StringsData]] {
+        array.reduce(into: [String: [StringsData]]()) { partialResult, stringsData in
+            let key = stringsData.tableName
+            if partialResult.keys.contains(key) {
+                partialResult[key]?.append(stringsData)
+            } else {
+                partialResult[key] = [stringsData]
+            }
+        }
+    }
+
+    func convertToXCStrings(from array: [StringsData], with sourceLanguage: String) -> XCStrings {
+        let strings = array.reduce(into: [String: Strings]()) { partialResult, stringsData in
+            stringsData.values.forEach { stringKey, localizedValue in
+                let localization = Localization(stringUnit: StringUnit(value: localizedValue))
+                if partialResult.keys.contains(stringKey) {
+                    partialResult[stringKey]?.localizations[stringsData.language] = localization
                 } else {
-                    strings[key] = Strings(localizations: [item.language: localization])
+                    partialResult[stringKey] = Strings(localizations: [stringsData.language: localization])
                 }
             }
         }
@@ -84,16 +85,20 @@ public struct XMMain {
         )
     }
 
-    func exportXCStringsFile(_ tableName: String, _ xcstrings: XCStrings, _ outputPath: String, _ verbose: Bool) throws {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
-        let data = try encoder.encode(xcstrings)
-        if verbose, let jsonString = String(data: data, encoding: .utf8) {
-            Swift.print(jsonString)
+    func exportXCStringsFile(name: String, _ xcstrings: XCStrings, _ outputPath: String, _ verbose: Bool) throws {
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            let data = try encoder.encode(xcstrings)
+            if verbose, let jsonString = String(data: data, encoding: .utf8) {
+                Swift.print(jsonString)
+            }
+            let outputURL = URL(filePath: outputPath)
+                .appending(path: name)
+                .appendingPathExtension("xcstrings")
+            try data.write(to: outputURL)
+        } catch {
+            throw XMError.failedToExport
         }
-        let outputURL = URL(filePath: outputPath)
-            .appending(path: tableName)
-            .appendingPathExtension("xcstrings")
-        try data.write(to: outputURL)
     }
 }
