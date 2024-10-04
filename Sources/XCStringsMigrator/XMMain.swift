@@ -8,9 +8,11 @@ public struct XMMain {
         verbose: Bool
     ) throws {
         let xm = XMMain()
-        let stringsData = xm.extractStringsData(paths)
-        let xcstrings = xm.convertXCStrings(sourceLanguage, stringsData)
-        try xm.exportXCStringsFile(xcstrings, outputPath, verbose)
+        let stringsDataTable = xm.extractStringsData(paths)
+        try stringsDataTable.forEach { item in
+            let xcstrings = xm.convertXCStrings(sourceLanguage, item.value)
+            try xm.exportXCStringsFile(item.key, xcstrings, outputPath, verbose)
+        }
     }
 
     func extractKeyValue(url: URL) -> [String: String]? {
@@ -30,8 +32,8 @@ public struct XMMain {
         return values
     }
 
-    func extractStringsData(_ paths: [String]) -> [StringsData] {
-        return paths
+    func extractStringsData(_ paths: [String]) -> [String: [StringsData]] {
+        let stringsFiles = paths
             .map { URL(filePath: $0) }
             .filter { url in
                 url.pathExtension == "lproj" && FileManager.default.fileExists(atPath: url.path())
@@ -46,14 +48,20 @@ public struct XMMain {
                     .filter { $0.pathExtension == "strings" }
                 return (language, urls)
             }
-            .compactMap { item in
-                let values = item.1
-                    .compactMap { extractKeyValue(url: $0) }
-                    .reduce(into: [:]) { partialResult, value in
-                        partialResult.merge(value, uniquingKeysWith: { (current, _) in current })
+        var tables = [String: [StringsData]]()
+        stringsFiles.forEach { item in
+            item.1.forEach { url in
+                let tableName = url.deletingPathExtension().lastPathComponent
+                if let dict = extractKeyValue(url: url) {
+                    if tables.keys.contains(tableName) {
+                        tables[tableName]?.append(StringsData(language: item.0, values: dict))
+                    } else {
+                        tables[tableName] = [StringsData(language: item.0, values: dict)]
                     }
-                return StringsData(language: item.0, values: values)
+                }
             }
+        }
+        return tables
     }
 
     func convertXCStrings(_ sourceLanguage: String, _ stringsData: [StringsData]) -> XCStrings {
@@ -78,7 +86,7 @@ public struct XMMain {
         )
     }
 
-    func exportXCStringsFile(_ xcstrings: XCStrings, _ outputPath: String, _ verbose: Bool) throws {
+    func exportXCStringsFile(_ tableName: String, _ xcstrings: XCStrings, _ outputPath: String, _ verbose: Bool) throws {
         let encoder = JSONEncoder()
         encoder.outputFormatting = .prettyPrinted
         let data = try encoder.encode(xcstrings)
@@ -86,7 +94,7 @@ public struct XMMain {
             Swift.print(jsonString)
         }
         let outputURL = URL(filePath: outputPath)
-            .appending(path: "Localizable")
+            .appending(path: tableName)
             .appendingPathExtension("xcstrings")
         try data.write(to: outputURL)
     }
