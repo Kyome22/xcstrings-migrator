@@ -25,5 +25,5 @@ OPTIONS:
 ```sh
 git clone https://github.com/Kyome22/xcstrings-migrator.git
 cd xcstrings-migrator
-swift run xcstrings-migrator -o . -p en.lproj -p ja.lproj
+swift run xcstrings-migrator -output-directory ~/result -path ~/original/en.lproj -path ~/original/ja.lproj
 ```
