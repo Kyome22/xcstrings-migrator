@@ -119,6 +119,10 @@ final class XMMainTests: XCTestCase {
             sut.standardOutput = { items in
                 standardOutputs.append(contentsOf: items.map({ "\($0)" }))
             }
+            var writeDataCount: Int = 0
+            sut.writeData = { _, _ in
+                writeDataCount += 1
+            }
             let input = XCStrings(
                 sourceLanguage: "en",
                 strings: ["key": Strings(localizations: [
@@ -130,12 +134,17 @@ final class XMMainTests: XCTestCase {
             try sut.exportXCStringsFile(name: "Localizable", input)
             let expect = ["Succeeded to export xcstrings files."]
             XCTAssertEqual(standardOutputs, expect)
+            XCTAssertEqual(writeDataCount, 1)
         }
         try XCTContext.runActivity(named: "If the XCStrings object is valid and verbose is true, the file is successfully exported with outputting details.") { _ in
             var sut = XMMain(sourceLanguage: "en", paths: [], outputPath: "", verbose: true)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
                 standardOutputs.append(contentsOf: items.map({ "\($0)" }))
+            }
+            var writeDataCount: Int = 0
+            sut.writeData = { _, _ in
+                writeDataCount += 1
             }
             let input = XCStrings(
                 sourceLanguage: "en",
@@ -172,6 +181,21 @@ final class XMMainTests: XCTestCase {
                """
             let expect = [details, "Succeeded to export xcstrings files."]
             XCTAssertEqual(standardOutputs, expect)
+            XCTAssertEqual(writeDataCount, 1)
+        }
+        try XCTContext.runActivity(named: "If exporting the file fails, an error is thrown.") { _ in
+            var sut = XMMain(sourceLanguage: "en", paths: [], outputPath: "", verbose: false)
+            var standardOutputs = [String]()
+            sut.standardOutput = { items in
+                standardOutputs.append(contentsOf: items.map({ "\($0)" }))
+            }
+            sut.writeData = { _, _ in
+                throw CocoaError(.fileWriteUnknown)
+            }
+            let input = XCStrings(sourceLanguage: "en", strings: [:], version: "1.0")
+            XCTAssertThrowsError(try sut.exportXCStringsFile(name: "Localizable", input)) { error in
+                XCTAssertEqual(error as? XMError, XMError.failedToExport)
+            }
         }
     }
 }
