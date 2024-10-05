@@ -1,18 +1,33 @@
 import Foundation
 
 public struct XMMain {
-    public static func run(
+    private var sourceLanguage: String
+    private var paths: [String]
+    private var outputPath: String
+    private var verbose: Bool
+    var standardOutput: (Any...) -> Void
+    var writeData: (Data, URL) throws -> Void
+
+    public init(
         sourceLanguage: String,
         paths: [String],
         outputPath: String,
         verbose: Bool
-    ) throws {
-        let xm = XMMain()
-        let array = xm.extractStringsData(from: paths)
-        let dict = xm.classifyStringsData(with: array)
+    ) {
+        self.sourceLanguage = sourceLanguage
+        self.paths = paths
+        self.outputPath = outputPath
+        self.verbose = verbose
+        self.standardOutput = { Swift.print($0) }
+        self.writeData = { try $0.write(to: $1) }
+    }
+
+    public func run() throws {
+        let array = extractStringsData()
+        let dict = classifyStringsData(with: array)
         try dict.forEach { key, value in
-            let xcstrings = xm.convertToXCStrings(from: value, with: sourceLanguage)
-            try xm.exportXCStringsFile(name: key, xcstrings, outputPath, verbose)
+            let xcstrings = convertToXCStrings(from: value)
+            try exportXCStringsFile(name: key, xcstrings)
         }
     }
 
@@ -33,14 +48,15 @@ public struct XMMain {
         return values
     }
 
-    func extractStringsData(from paths: [String]) -> [StringsData] {
+    func extractStringsData() -> [StringsData] {
+        let fileManager = FileManager.default
         let stringsFiles = paths
             .map { URL(filePath: $0) }
             .filter { url in
-                url.pathExtension == "lproj" && FileManager.default.fileExists(atPath: url.path())
+                url.pathExtension == "lproj" && fileManager.fileExists(atPath: url.path())
             }
             .flatMap { url -> [StringsFile] in
-                guard let contents = try? FileManager.default.contentsOfDirectory(atPath: url.path()) else {
+                guard let contents = try? fileManager.contentsOfDirectory(atPath: url.path()) else {
                     return []
                 }
                 let language = url.deletingPathExtension().lastPathComponent
@@ -67,7 +83,7 @@ public struct XMMain {
         }
     }
 
-    func convertToXCStrings(from array: [StringsData], with sourceLanguage: String) -> XCStrings {
+    func convertToXCStrings(from array: [StringsData]) -> XCStrings {
         let strings = array.reduce(into: [String: Strings]()) { partialResult, stringsData in
             stringsData.values.forEach { stringKey, localizedValue in
                 let localization = Localization(stringUnit: StringUnit(value: localizedValue))
@@ -85,18 +101,19 @@ public struct XMMain {
         )
     }
 
-    func exportXCStringsFile(name: String, _ xcstrings: XCStrings, _ outputPath: String, _ verbose: Bool) throws {
+    func exportXCStringsFile(name: String, _ xcstrings: XCStrings) throws {
         do {
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             let data = try encoder.encode(xcstrings)
             if verbose, let jsonString = String(data: data, encoding: .utf8) {
-                Swift.print(jsonString)
+                standardOutput(jsonString)
             }
             let outputURL = URL(filePath: outputPath)
                 .appending(path: name)
                 .appendingPathExtension("xcstrings")
-            try data.write(to: outputURL)
+            try writeData(data, outputURL)
+            standardOutput("Succeeded to export xcstrings files.")
         } catch {
             throw XMError.failedToExport
         }

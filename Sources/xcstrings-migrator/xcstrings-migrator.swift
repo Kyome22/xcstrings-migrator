@@ -36,12 +36,12 @@ struct XM: ParsableCommand {
 
     mutating func run() throws {
         do {
-            try XMMain.run(
+            try XMMain(
                 sourceLanguage: sourceLanguage,
                 paths: paths,
                 outputPath: outputPath,
                 verbose: verbose
-            )
+            ).run()
         } catch let error as XMError {
             Swift.print("error:", error.errorDescription!)
             Darwin.exit(error.exitCode)

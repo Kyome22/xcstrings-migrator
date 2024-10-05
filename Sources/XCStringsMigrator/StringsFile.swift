@@ -1,6 +1,6 @@
 import Foundation
 
-struct StringsFile {
+struct StringsFile: Equatable {
     var language: String
     var url: URL
 }

@@ -1,20 +1,20 @@
 import Foundation
 
-struct XCStrings: Codable {
+struct XCStrings: Codable, Equatable {
     var sourceLanguage: String
     var strings: [String: Strings]
     var version: String
 }
 
-struct Strings: Codable {
+struct Strings: Codable, Equatable {
     var localizations: [String: Localization]
 }
 
-struct Localization: Codable {
+struct Localization: Codable, Equatable {
     var stringUnit: StringUnit
 }
 
-struct StringUnit: Codable {
+struct StringUnit: Codable, Equatable {
     var state: String
     var value: String
 
