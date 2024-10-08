@@ -1,6 +1,6 @@
 import Foundation
 
-public struct XMMain {
+public struct XMMigrator {
     private var sourceLanguage: String
     private var paths: [String]
     private var outputPath: String
@@ -18,17 +18,22 @@ public struct XMMain {
         self.paths = paths
         self.outputPath = outputPath
         self.verbose = verbose
-        self.standardOutput = { Swift.print($0) }
-        self.writeData = { try $0.write(to: $1) }
+        self.standardOutput = {
+            Swift.print($0.map({ "\($0)" }).joined(separator: " "))
+        }
+        self.writeData = {
+            try $0.write(to: $1)
+        }
     }
 
     public func run() throws {
-        let array = extractStringsData()
+        let array = try extractStringsData()
         let dict = classifyStringsData(with: array)
         try dict.forEach { key, value in
             let xcstrings = convertToXCStrings(from: value)
             try exportXCStringsFile(name: key, xcstrings)
         }
+        standardOutput("Completed.")
     }
 
     func extractKeyValue(from url: URL) -> [String: String]? {
@@ -48,7 +53,7 @@ public struct XMMain {
         return values
     }
 
-    func extractStringsData() -> [StringsData] {
+    func extractStringsData() throws -> [StringsData] {
         let fileManager = FileManager.default
         let stringsFiles = paths
             .map { URL(filePath: $0) }
@@ -65,6 +70,9 @@ public struct XMMain {
                     .filter { $0.pathExtension == "strings" }
                     .map { StringsFile(language: language, url: $0) }
             }
+        guard !stringsFiles.isEmpty else {
+            throw XMError.stringsFilesNotFound
+        }
         return stringsFiles.compactMap { stringsFile in
             guard let values = extractKeyValue(from: stringsFile.url) else { return nil }
             let tableName = stringsFile.url.deletingPathExtension().lastPathComponent
@@ -115,7 +123,7 @@ public struct XMMain {
             try writeData(data, outputURL)
             standardOutput("Succeeded to export xcstrings files.")
         } catch {
-            throw XMError.failedToExport
+            throw XMError.failedToExportXCStringsFile
         }
     }
 }

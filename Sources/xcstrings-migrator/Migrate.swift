@@ -2,11 +2,9 @@ import ArgumentParser
 import Darwin
 import XCStringsMigrator
 
-struct XM: ParsableCommand {
+struct Migrate: ParsableCommand {
     static var configuration = CommandConfiguration(
-        commandName: "xcstrings-migrator",
-        abstract: "A tool to migrate the legacy strings file to xcstrings file.",
-        version: "1.0.0"
+        abstract: "Migrate legacy strings file to xcstrings file."
     )
 
     @Option(
@@ -30,13 +28,13 @@ struct XM: ParsableCommand {
 
     @Flag(
         name: [.customShort("v"), .customLong("verbose")],
-        help: "Do not output warnings."
+        help: "Provide detail output."
     )
     var verbose: Bool = false
 
     mutating func run() throws {
         do {
-            try XMMain(
+            try XMMigrator(
                 sourceLanguage: sourceLanguage,
                 paths: paths,
                 outputPath: outputPath,
