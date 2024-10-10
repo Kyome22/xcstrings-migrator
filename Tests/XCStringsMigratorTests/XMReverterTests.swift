@@ -41,8 +41,8 @@ final class XMReverterTests: XCTestCase {
                         "ja": Localization(stringUnit: .init(value: "カウント＝%lld")),
                     ]),
                     "language": Strings(localizations: [
-                        "en": Localization(stringUnit: .init(value: "english")),
-                        "ja": Localization(stringUnit: .init(value: "japanese")),
+                        "en": Localization(stringUnit: .init(value: "English")),
+                        "ja": Localization(stringUnit: .init(value: "日本語")),
                     ]),
                 ],
                 version: "1.0"

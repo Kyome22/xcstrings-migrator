@@ -15,10 +15,10 @@ final class XMMigratorTests: XCTestCase {
             let url = try XCTUnwrap(Bundle.module.url(forResource: "Localizable", withExtension: "strings", subdirectory: "Migrator"))
             let actual = sut.extractKeyValue(from: url)
             let expect = [
-                "key1": "value1",
-                "key2": "value2",
-                "key3": "value3",
-                "key4": "value4",
+                "\"Hello %@\"": "\"Hello %@\"",
+                "Count = %lld": "Count = %lld",
+                "key": "value",
+                "path": "/",
             ]
             XCTAssertEqual(actual, expect)
         }
@@ -61,10 +61,10 @@ final class XMMigratorTests: XCTestCase {
                     tableName: "Localizable",
                     language: "full",
                     values: [
-                        "key1": "value1",
-                        "key2": "value2",
-                        "key3": "value3",
-                        "key4": "value4",
+                        "\"Hello %@\"": "\"Hello %@\"",
+                        "Count = %lld": "Count = %lld",
+                        "key": "value",
+                        "path": "/",
                     ]
                 )
             ]
@@ -98,18 +98,50 @@ final class XMMigratorTests: XCTestCase {
 
     func test_convertToXCStrings() throws {
         XCTContext.runActivity(named: "StringsData array is converted to XCStrings.") { _ in
-            let sut = XMMigrator(sourceLanguage: "en", paths: [], outputPath: "", verbose: false)
+            let sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: false)
             let input: [StringsData] = [
-                StringsData(tableName: "Module1", language: "en", values: ["key": "English"]),
-                StringsData(tableName: "Module1", language: "ja", values: ["key": "Japanese"]),
+                StringsData(
+                    tableName: "Module1",
+                    language: "en",
+                    values: [
+                        "\"Hello %@\"": "\"Hello %@\"",
+                        "Count = %lld": "Count = %lld",
+                        "language": "English",
+                        "path": "/",
+                    ]
+                ),
+                StringsData(
+                    tableName: "Module1", 
+                    language: "ja", 
+                    values: [
+                        "\"Hello %@\"": "「こんにちは%@」",
+                        "Count = %lld": "カウント＝%lld",
+                        "language": "日本語",
+                        "path": "/",
+                    ]
+                ),
             ]
             let actual = sut.convertToXCStrings(from: input)
             let expect = XCStrings(
-                sourceLanguage: "en",
-                strings: ["key": Strings(localizations: [
-                    "en": Localization(stringUnit: StringUnit(value: "English")),
-                    "ja": Localization(stringUnit: StringUnit(value: "Japanese")),
-                ])],
+                sourceLanguage: "test",
+                strings: [
+                    "\"Hello %@\"": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "\"Hello %@\"")),
+                        "ja": Localization(stringUnit: StringUnit(value: "「こんにちは%@」")),
+                    ]),
+                    "Count = %lld": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "Count = %lld")),
+                        "ja": Localization(stringUnit: StringUnit(value: "カウント＝%lld")),
+                    ]),
+                    "language": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "English")),
+                        "ja": Localization(stringUnit: StringUnit(value: "日本語")),
+                    ]),
+                    "path": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "/")),
+                        "ja": Localization(stringUnit: StringUnit(value: "/")),
+                    ]),
+                ],
                 version: "1.0"
             )
             XCTAssertEqual(actual, expect)
@@ -129,10 +161,24 @@ final class XMMigratorTests: XCTestCase {
             }
             let input = XCStrings(
                 sourceLanguage: "test",
-                strings: ["key": Strings(localizations: [
-                    "en": Localization(stringUnit: StringUnit(value: "English")),
-                    "ja": Localization(stringUnit: StringUnit(value: "Japanese")),
-                ])],
+                strings: [
+                    "\"Hello %@\"": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "\"Hello %@\"")),
+                        "ja": Localization(stringUnit: StringUnit(value: "「こんにちは%@」")),
+                    ]),
+                    "Count = %lld": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "Count = %lld")),
+                        "ja": Localization(stringUnit: StringUnit(value: "カウント＝%lld")),
+                    ]),
+                    "language": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "English")),
+                        "ja": Localization(stringUnit: StringUnit(value: "日本語")),
+                    ]),
+                    "path": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "/")),
+                        "ja": Localization(stringUnit: StringUnit(value: "/")),
+                    ]),
+                ],
                 version: "1.0"
             )
             try sut.exportXCStringsFile(name: "Localizable", input)
@@ -152,37 +198,100 @@ final class XMMigratorTests: XCTestCase {
             }
             let input = XCStrings(
                 sourceLanguage: "test",
-                strings: ["key": Strings(localizations: [
-                    "en": Localization(stringUnit: StringUnit(value: "English")),
-                    "ja": Localization(stringUnit: StringUnit(value: "Japanese")),
-                ])],
+                strings: [
+                    "\"Hello %@\"": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "\"Hello %@\"")),
+                        "ja": Localization(stringUnit: StringUnit(value: "「こんにちは%@」")),
+                    ]),
+                    "Count = %lld": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "Count = %lld")),
+                        "ja": Localization(stringUnit: StringUnit(value: "カウント＝%lld")),
+                    ]),
+                    "language": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "English")),
+                        "ja": Localization(stringUnit: StringUnit(value: "日本語")),
+                    ]),
+                    "path": Strings(localizations: [
+                        "en": Localization(stringUnit: StringUnit(value: "/")),
+                        "ja": Localization(stringUnit: StringUnit(value: "/")),
+                    ]),
+                ],
                 version: "1.0"
             )
             try sut.exportXCStringsFile(name: "Localizable", input)
-            let details = """
-               {
-                 "sourceLanguage" : "test",
-                 "strings" : {
-                   "key" : {
-                     "localizations" : {
-                       "en" : {
-                         "stringUnit" : {
-                           "state" : "translated",
-                           "value" : "English"
-                         }
-                       },
-                       "ja" : {
-                         "stringUnit" : {
-                           "state" : "translated",
-                           "value" : "Japanese"
-                         }
-                       }
-                     }
-                   }
-                 },
-                 "version" : "1.0"
-               }
-               """
+            let details = #"""
+                {
+                  "sourceLanguage" : "test",
+                  "strings" : {
+                    "\"Hello %@\"" : {
+                      "localizations" : {
+                        "en" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "\"Hello %@\""
+                          }
+                        },
+                        "ja" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "「こんにちは%@」"
+                          }
+                        }
+                      }
+                    },
+                    "Count = %lld" : {
+                      "localizations" : {
+                        "en" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "Count = %lld"
+                          }
+                        },
+                        "ja" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "カウント＝%lld"
+                          }
+                        }
+                      }
+                    },
+                    "language" : {
+                      "localizations" : {
+                        "en" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "English"
+                          }
+                        },
+                        "ja" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "日本語"
+                          }
+                        }
+                      }
+                    },
+                    "path" : {
+                      "localizations" : {
+                        "en" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "/"
+                          }
+                        },
+                        "ja" : {
+                          "stringUnit" : {
+                            "state" : "translated",
+                            "value" : "/"
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "version" : "1.0"
+                }
+                """#
+
             let expect = [details, "Succeeded to export xcstrings files."]
             XCTAssertEqual(standardOutputs, expect)
             XCTAssertEqual(writeDataCount, 1)

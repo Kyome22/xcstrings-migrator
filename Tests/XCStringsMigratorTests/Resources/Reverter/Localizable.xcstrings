@@ -38,13 +38,29 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "english"
+            "value" : "English"
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "japanese"
+            "value" : "日本語"
+          }
+        }
+      }
+    },
+    "path" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "/"
           }
         }
       }

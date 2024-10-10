@@ -3,7 +3,7 @@
   Created by ky0me22 on 2024/10/05.
 */
 
-"key1" = "value1";
-"key2" = "value2";
-"key3" = "value3";
-"key4" = "value4";
+"\"Hello %@\"" = "\"Hello %@\"";
+"Count = %lld" = "Count = %lld";
+"key" = "value";
+"path" = "/";

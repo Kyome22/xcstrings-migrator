@@ -37,20 +37,13 @@ public struct XMMigrator {
     }
 
     func extractKeyValue(from url: URL) -> [String: String]? {
-        guard let text = try? String(contentsOf: url, encoding: .utf8) else {
+        let decoder = PropertyListDecoder()
+        var format = PropertyListSerialization.PropertyListFormat.openStep
+        guard let data = try? Data(contentsOf: url),
+              let dictionary = try? decoder.decode([String : String].self, from: data, format: &format) else {
             return nil
         }
-        let values: [String: String] = text
-            .components(separatedBy: .newlines)
-            .compactMap { item -> (String, String)? in
-                let regex = /"(.+)" = "(.+)";/
-                guard let match = item.wholeMatch(of: regex) else { return nil }
-                return (String(match.1), String(match.2))
-            }
-            .reduce(into: [:]) { partialResult, tuple in
-                partialResult[tuple.0] = tuple.1
-            }
-        return values
+        return dictionary
     }
 
     func extractStringsData() throws -> [StringsData] {
@@ -112,7 +105,11 @@ public struct XMMigrator {
     func exportXCStringsFile(name: String, _ xcstrings: XCStrings) throws {
         do {
             let encoder = JSONEncoder()
-            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.outputFormatting = [
+                .prettyPrinted,
+                .sortedKeys,
+                .withoutEscapingSlashes,
+            ]
             let data = try encoder.encode(xcstrings)
             if verbose, let jsonString = String(data: data, encoding: .utf8) {
                 standardOutput(jsonString)
