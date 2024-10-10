@@ -12,7 +12,7 @@ final class XMMigratorTests: XCTestCase {
         }
         try XCTContext.runActivity(named: "If strings file is valid, dictionary will be returned.") { _ in
             let sut = XMMigrator(sourceLanguage: "", paths: [], outputPath: "", verbose: false)
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "Localizable", withExtension: "strings"))
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "Localizable", withExtension: "strings", subdirectory: "full.lproj"))
             let actual = sut.extractKeyValue(from: url)
             let expect = [
                 "key1": "value1",
@@ -46,20 +46,20 @@ final class XMMigratorTests: XCTestCase {
             }
         }
         try XCTContext.runActivity(named: "If path extension is lproj and file exists but contains no strings files, error is thrown.") { _ in
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "dummy", withExtension: "lproj"))
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "empty", withExtension: "lproj"))
             let sut = XMMigrator(sourceLanguage: "", paths: [url.path()], outputPath: "", verbose: false)
             XCTAssertThrowsError(try sut.extractStringsData()) { error in
                 XCTAssertEqual(error as? XMError, XMError.stringsFilesNotFound)
             }
         }
         try XCTContext.runActivity(named: "If path extension is lproj and file exists and contains some strings files, array with elements is returned.") { _ in
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "en", withExtension: "lproj"))
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "full", withExtension: "lproj"))
             let sut = XMMigrator(sourceLanguage: "", paths: [url.path()], outputPath: "", verbose: false)
             let actual = try sut.extractStringsData()
             let expect = [
                 StringsData(
                     tableName: "Localizable",
-                    language: "en",
+                    language: "full",
                     values: [
                         "key1": "value1",
                         "key2": "value2",
@@ -118,7 +118,7 @@ final class XMMigratorTests: XCTestCase {
 
     func test_exportXCStringsFile() throws {
         try XCTContext.runActivity(named: "If the XCStrings object is valid and verbose is false, the file is successfully exported without outputting details.") { _ in
-            var sut = XMMigrator(sourceLanguage: "en", paths: [], outputPath: "", verbose: false)
+            var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: false)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
                 standardOutputs.append(contentsOf: items.map({ "\($0)" }))
@@ -128,7 +128,7 @@ final class XMMigratorTests: XCTestCase {
                 writeDataCount += 1
             }
             let input = XCStrings(
-                sourceLanguage: "en",
+                sourceLanguage: "test",
                 strings: ["key": Strings(localizations: [
                     "en": Localization(stringUnit: StringUnit(value: "English")),
                     "ja": Localization(stringUnit: StringUnit(value: "Japanese")),
@@ -141,7 +141,7 @@ final class XMMigratorTests: XCTestCase {
             XCTAssertEqual(writeDataCount, 1)
         }
         try XCTContext.runActivity(named: "If the XCStrings object is valid and verbose is true, the file is successfully exported with outputting details.") { _ in
-            var sut = XMMigrator(sourceLanguage: "en", paths: [], outputPath: "", verbose: true)
+            var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: true)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
                 standardOutputs.append(contentsOf: items.map({ "\($0)" }))
@@ -151,7 +151,7 @@ final class XMMigratorTests: XCTestCase {
                 writeDataCount += 1
             }
             let input = XCStrings(
-                sourceLanguage: "en",
+                sourceLanguage: "test",
                 strings: ["key": Strings(localizations: [
                     "en": Localization(stringUnit: StringUnit(value: "English")),
                     "ja": Localization(stringUnit: StringUnit(value: "Japanese")),
@@ -161,7 +161,7 @@ final class XMMigratorTests: XCTestCase {
             try sut.exportXCStringsFile(name: "Localizable", input)
             let details = """
                {
-                 "sourceLanguage" : "en",
+                 "sourceLanguage" : "test",
                  "strings" : {
                    "key" : {
                      "localizations" : {
@@ -188,7 +188,7 @@ final class XMMigratorTests: XCTestCase {
             XCTAssertEqual(writeDataCount, 1)
         }
         try XCTContext.runActivity(named: "If exporting the file fails, an error is thrown.") { _ in
-            var sut = XMMigrator(sourceLanguage: "en", paths: [], outputPath: "", verbose: false)
+            var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: false)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
                 standardOutputs.append(contentsOf: items.map({ "\($0)" }))
@@ -196,7 +196,7 @@ final class XMMigratorTests: XCTestCase {
             sut.writeData = { _, _ in
                 throw CocoaError(.fileWriteUnknown)
             }
-            let input = XCStrings(sourceLanguage: "en", strings: [:], version: "1.0")
+            let input = XCStrings(sourceLanguage: "test", strings: [:], version: "1.0")
             XCTAssertThrowsError(try sut.exportXCStringsFile(name: "Localizable", input)) { error in
                 XCTAssertEqual(error as? XMError, XMError.failedToExportXCStringsFile)
             }
