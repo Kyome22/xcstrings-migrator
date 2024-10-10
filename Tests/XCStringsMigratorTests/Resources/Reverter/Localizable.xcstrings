@@ -1,34 +1,18 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "key1" : {
+    "\"Hello %@\"" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "elglish"
+            "value" : "\"Hello %@\""
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "japanese"
-          }
-        }
-      }
-    },
-    "\"Hello World\"" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "\"Hello World\""
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "「こんにちは世界」"
+            "value" : "「こんにちは%@」"
           }
         }
       }
@@ -45,6 +29,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "カウント＝%lld"
+          }
+        }
+      }
+    },
+    "language" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "english"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "japanese"
           }
         }
       }

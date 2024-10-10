@@ -4,29 +4,146 @@ import XCTest
 
 final class XMReverterTests: XCTestCase {
     func test_extractXCStrings() throws {
-        XCTContext.runActivity(named: "") { _ in
-            let sut = XMReverter(path: "", outputPath: "")
+        try XCTContext.runActivity(named: "If path extension is not xcstrings, error is thrown.") { _ in
+            let url = try XCTUnwrap(Bundle.module.resourceURL).appending(path: "dummy")
+            let sut = XMReverter(path: url.path(), outputPath: "")
+            XCTAssertThrowsError(try sut.extractXCStrings()) { error in
+                XCTAssertEqual(error as? XMError, XMError.xcstringsFileNotFound)
+            }
         }
-        XCTContext.runActivity(named: "") { _ in
-
+        try XCTContext.runActivity(named: "If path extension is xcstrings but file does not exist, error is thrown.") { _ in
+            let url = try XCTUnwrap(Bundle.module.resourceURL).appending(path: "not-exist.xcstrings")
+            let sut = XMReverter(path: url.path(), outputPath: "")
+            XCTAssertThrowsError(try sut.extractXCStrings()) { error in
+                XCTAssertEqual(error as? XMError, XMError.xcstringsFileNotFound)
+            }
+        }
+        try XCTContext.runActivity(named: "If path extension is xcstrings and file exists but is broken, error is thrown.") { _ in
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "Broken", withExtension: "xcstrings", subdirectory: "Reverter"))
+            let sut = XMReverter(path: url.path(), outputPath: "")
+            XCTAssertThrowsError(try sut.extractXCStrings()) { error in
+                XCTAssertEqual(error as? XMError, XMError.xcstringsFileIsBroken)
+            }
+        }
+        try XCTContext.runActivity(named: "") { _ in
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "Localizable", withExtension: "xcstrings", subdirectory: "Reverter"))
+            let sut = XMReverter(path: url.path(), outputPath: "")
+            let actual = try sut.extractXCStrings()
+            let expect = XCStrings(
+                sourceLanguage: "en",
+                strings: [
+                    "\"Hello %@\"": Strings(localizations: [
+                        "en": Localization(stringUnit: .init(value: "\"Hello %@\"")),
+                        "ja": Localization(stringUnit: .init(value: "「こんにちは%@」")),
+                    ]),
+                    "Count = %lld": Strings(localizations: [
+                        "en": Localization(stringUnit: .init(value: "Count = %lld")),
+                        "ja": Localization(stringUnit: .init(value: "カウント＝%lld")),
+                    ]),
+                    "language": Strings(localizations: [
+                        "en": Localization(stringUnit: .init(value: "english")),
+                        "ja": Localization(stringUnit: .init(value: "japanese")),
+                    ]),
+                ],
+                version: "1.0"
+            )
+            XCTAssertEqual(actual, expect)
         }
     }
 
     func test_convertToStringsData() {
-        XCTContext.runActivity(named: "") { _ in
+        XCTContext.runActivity(named: "XCStrings is converted to StringsData array.") { _ in
             let sut = XMReverter(path: "", outputPath: "")
-        }
-        XCTContext.runActivity(named: "") { _ in
-
+            let input = XCStrings(
+                sourceLanguage: "test",
+                strings: [
+                    "key1": Strings(localizations: [
+                        "en": Localization(stringUnit: .init(value: "en_value_1")),
+                        "ja": Localization(stringUnit: .init(value: "ja_value_1")),
+                    ]),
+                    "key2": Strings(localizations: [
+                        "en": Localization(stringUnit: .init(value: "en_value_2")),
+                        "ja": Localization(stringUnit: .init(value: "ja_value_2")),
+                    ]),
+                    "key3": Strings(localizations: [
+                        "en": Localization(stringUnit: .init(value: "en_value_3")),
+                        "ja": Localization(stringUnit: .init(value: "ja_value_3")),
+                    ]),
+                ],
+                version: "1.0"
+            )
+            let actual = sut.convertToStringsData(from: input)
+            let expect = [
+                StringsData(
+                    tableName: "Localizable",
+                    language: "en",
+                    values: [
+                        "key1": "en_value_1",
+                        "key2": "en_value_2",
+                        "key3": "en_value_3",
+                    ]
+                ),
+                StringsData(
+                    tableName: "Localizable",
+                    language: "ja",
+                    values: [
+                        "key1": "ja_value_1",
+                        "key2": "ja_value_2",
+                        "key3": "ja_value_3",
+                    ]
+                ),
+            ]
+            XCTAssertEqual(actual, expect)
         }
     }
 
-    func test_exportStringsFile() {
-        XCTContext.runActivity(named: "") { _ in
-
+    func test_exportStringsFile() throws {
+        try XCTContext.runActivity(named: "If StringsData is valid, file is successfully exported.") { _ in
+            var sut = XMReverter(path: "", outputPath: "output")
+            var standardOutputs = [String]()
+            sut.standardOutput = { items in
+                standardOutputs.append(contentsOf: items.map({ "\($0)" }))
+            }
+            var writeStrings = [String]()
+            sut.writeString = { text, url in
+                guard url.path() == "output/test.lproj/Localizable.strings" else {
+                    XCTFail()
+                    return
+                }
+                writeStrings.append(text)
+            }
+            let input = StringsData(
+                tableName: "Localizable",
+                language: "test",
+                values: [
+                    "\"Hello %@\"": "\"Hello %@\"",
+                    "Count = %lld": "Count = %lld",
+                    "key": "value",
+                ]
+            )
+            try sut.exportStringsFile(input)
+            XCTAssertEqual(standardOutputs, ["Succeeded to export strings file."])
+            let expect = """
+                "\\\"Hello %@\\\"" = "\\\"Hello %@\\\"";
+                "Count = %lld" = "Count = %lld";
+                "key" = "value";
+                """
+            XCTAssertEqual(writeStrings, [expect])
         }
-        XCTContext.runActivity(named: "") { _ in
-
+        try XCTContext.runActivity(named: "If exporting file fails, an error is thrown.") { _ in
+            var sut = XMReverter(path: "", outputPath: "")
+            var standardOutputs = [String]()
+            sut.standardOutput = { items in
+                standardOutputs.append(contentsOf: items.map({ "\($0)" }))
+            }
+            sut.writeString = { _, _ in
+                throw CocoaError(.fileWriteUnknown)
+            }
+            let input = StringsData(tableName: "Localizable", language: "test", values: [:])
+            XCTAssertThrowsError(try sut.exportStringsFile(input)) { error in
+                XCTAssertEqual(error as? XMError, XMError.failedToExportStringsFile)
+            }
+            XCTAssertTrue(standardOutputs.isEmpty)
         }
     }
 }

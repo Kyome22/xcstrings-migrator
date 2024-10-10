@@ -4,7 +4,7 @@ import XCTest
 
 final class XMMigratorTests: XCTestCase {
     func test_extractKeyValue() throws {
-        try XCTContext.runActivity(named: "If the URL is invalid, nil will be returned.") { _ in
+        try XCTContext.runActivity(named: "If URL is invalid, nil will be returned.") { _ in
             let sut = XMMigrator(sourceLanguage: "", paths: [], outputPath: "", verbose: false)
             let url = try XCTUnwrap(Bundle.module.resourceURL).appending(path: "not-exist.strings")
             let actual = sut.extractKeyValue(from: url)
@@ -12,7 +12,7 @@ final class XMMigratorTests: XCTestCase {
         }
         try XCTContext.runActivity(named: "If strings file is valid, dictionary will be returned.") { _ in
             let sut = XMMigrator(sourceLanguage: "", paths: [], outputPath: "", verbose: false)
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "Localizable", withExtension: "strings", subdirectory: "full.lproj"))
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "Localizable", withExtension: "strings", subdirectory: "Migrator"))
             let actual = sut.extractKeyValue(from: url)
             let expect = [
                 "key1": "value1",
@@ -32,7 +32,7 @@ final class XMMigratorTests: XCTestCase {
             }
         }
         try XCTContext.runActivity(named: "If path extension is not lproj, error is thrown.") { _ in
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "empty", withExtension: nil))
+            let url = try XCTUnwrap(Bundle.module.resourceURL).appending(path: "dummy")
             let sut = XMMigrator(sourceLanguage: "", paths: [url.path()], outputPath: "", verbose: false)
             XCTAssertThrowsError(try sut.extractStringsData()) { error in
                 XCTAssertEqual(error as? XMError, XMError.stringsFilesNotFound)
@@ -46,14 +46,14 @@ final class XMMigratorTests: XCTestCase {
             }
         }
         try XCTContext.runActivity(named: "If path extension is lproj and file exists but contains no strings files, error is thrown.") { _ in
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "empty", withExtension: "lproj"))
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "empty", withExtension: "lproj", subdirectory: "Migrator"))
             let sut = XMMigrator(sourceLanguage: "", paths: [url.path()], outputPath: "", verbose: false)
             XCTAssertThrowsError(try sut.extractStringsData()) { error in
                 XCTAssertEqual(error as? XMError, XMError.stringsFilesNotFound)
             }
         }
         try XCTContext.runActivity(named: "If path extension is lproj and file exists and contains some strings files, array with elements is returned.") { _ in
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "full", withExtension: "lproj"))
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "full", withExtension: "lproj", subdirectory: "Migrator"))
             let sut = XMMigrator(sourceLanguage: "", paths: [url.path()], outputPath: "", verbose: false)
             let actual = try sut.extractStringsData()
             let expect = [
@@ -73,7 +73,7 @@ final class XMMigratorTests: XCTestCase {
     }
 
     func test_classifyStringsData() throws {
-        XCTContext.runActivity(named: "StringData array is classified by table name.") { _ in
+        XCTContext.runActivity(named: "StringsData array is classified by table name.") { _ in
             let sut = XMMigrator(sourceLanguage: "", paths: [], outputPath: "", verbose: false)
             let input: [StringsData] = [
                 StringsData(tableName: "Module1", language: "en", values: [:]),
@@ -97,7 +97,7 @@ final class XMMigratorTests: XCTestCase {
     }
 
     func test_convertToXCStrings() throws {
-        XCTContext.runActivity(named: "StringData array is converted to XCStrings object.") { _ in
+        XCTContext.runActivity(named: "StringsData array is converted to XCStrings.") { _ in
             let sut = XMMigrator(sourceLanguage: "en", paths: [], outputPath: "", verbose: false)
             let input: [StringsData] = [
                 StringsData(tableName: "Module1", language: "en", values: ["key": "English"]),
@@ -117,7 +117,7 @@ final class XMMigratorTests: XCTestCase {
     }
 
     func test_exportXCStringsFile() throws {
-        try XCTContext.runActivity(named: "If the XCStrings object is valid and verbose is false, the file is successfully exported without outputting details.") { _ in
+        try XCTContext.runActivity(named: "If XCStrings is valid and verbose is false, file is successfully exported without outputting details.") { _ in
             var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: false)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
@@ -140,7 +140,7 @@ final class XMMigratorTests: XCTestCase {
             XCTAssertEqual(standardOutputs, expect)
             XCTAssertEqual(writeDataCount, 1)
         }
-        try XCTContext.runActivity(named: "If the XCStrings object is valid and verbose is true, the file is successfully exported with outputting details.") { _ in
+        try XCTContext.runActivity(named: "If XCStrings is valid and verbose is true, file is successfully exported with outputting details.") { _ in
             var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: true)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
@@ -187,7 +187,7 @@ final class XMMigratorTests: XCTestCase {
             XCTAssertEqual(standardOutputs, expect)
             XCTAssertEqual(writeDataCount, 1)
         }
-        try XCTContext.runActivity(named: "If exporting the file fails, an error is thrown.") { _ in
+        try XCTContext.runActivity(named: "If exporting file fails, an error is thrown.") { _ in
             var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: false)
             var standardOutputs = [String]()
             sut.standardOutput = { items in

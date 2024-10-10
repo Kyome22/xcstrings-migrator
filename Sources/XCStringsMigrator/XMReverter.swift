@@ -5,7 +5,7 @@ public struct XMReverter {
     private var outputPath: String
     var standardOutput: (Any...) -> Void
     var createDirectory: (URL) throws -> Void
-    var write: (String, URL) throws -> Void
+    var writeString: (String, URL) throws -> Void
 
     public init(path: String, outputPath: String) {
         self.path = path
@@ -16,7 +16,7 @@ public struct XMReverter {
         self.createDirectory = {
             try FileManager.default.createDirectory(at: $0, withIntermediateDirectories: true)
         }
-        self.write = {
+        self.writeString = {
             try $0.write(to: $1, atomically: false, encoding: .utf8)
         }
     }
@@ -38,8 +38,7 @@ public struct XMReverter {
         }
         do {
             let data = try Data(contentsOf: url)
-            let result = try JSONDecoder().decode(XCStrings.self, from: data)
-            return result
+            return try JSONDecoder().decode(XCStrings.self, from: data)
         } catch {
             throw XMError.xcstringsFileIsBroken
         }
@@ -71,9 +70,10 @@ public struct XMReverter {
                 .appending(path: stringsData.tableName)
                 .appendingPathExtension("strings")
             let text = stringsData.values
+                .sorted(by: { $0.key < $1.key })
                 .map { "\($0.key.debugDescription) = \($0.value.debugDescription);" }
                 .joined(separator: "\n")
-            try write(text, outputFileURL)
+            try writeString(text, outputFileURL)
             standardOutput("Succeeded to export strings file.")
         } catch {
             throw XMError.failedToExportStringsFile

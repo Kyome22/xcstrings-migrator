@@ -43,10 +43,8 @@ let package = Package(
                 .target(name: "XCStringsMigrator"),
             ],
             resources: [
-                .copy("Resources/empty.lproj"),
-                .copy("Resources/full.lproj"),
-                .copy("Resources/empty"),
-                .copy("Resources/Localizable.xcstrings"),
+                .copy("Resources/Migrator"),
+                .copy("Resources/Reverter"),
             ]
         ),
     ]
