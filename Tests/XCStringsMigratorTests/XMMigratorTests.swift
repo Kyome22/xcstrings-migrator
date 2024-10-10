@@ -150,13 +150,14 @@ final class XMMigratorTests: XCTestCase {
 
     func test_exportXCStringsFile() throws {
         try XCTContext.runActivity(named: "If XCStrings is valid and verbose is false, file is successfully exported without outputting details.") { _ in
-            var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: false)
+            var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "output", verbose: false)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
                 standardOutputs.append(contentsOf: items.map({ "\($0)" }))
             }
             var writeDataCount: Int = 0
-            sut.writeData = { _, _ in
+            sut.writeData = { _, url in
+                XCTAssertEqual(url.path(), "output/Localizable.xcstrings")
                 writeDataCount += 1
             }
             let input = XCStrings(
@@ -187,13 +188,14 @@ final class XMMigratorTests: XCTestCase {
             XCTAssertEqual(writeDataCount, 1)
         }
         try XCTContext.runActivity(named: "If XCStrings is valid and verbose is true, file is successfully exported with outputting details.") { _ in
-            var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "", verbose: true)
+            var sut = XMMigrator(sourceLanguage: "test", paths: [], outputPath: "output", verbose: true)
             var standardOutputs = [String]()
             sut.standardOutput = { items in
                 standardOutputs.append(contentsOf: items.map({ "\($0)" }))
             }
             var writeDataCount: Int = 0
-            sut.writeData = { _, _ in
+            sut.writeData = { _, url in
+                XCTAssertEqual(url.path(), "output/Localizable.xcstrings")
                 writeDataCount += 1
             }
             let input = XCStrings(

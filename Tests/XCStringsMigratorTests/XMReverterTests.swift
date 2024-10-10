@@ -44,6 +44,10 @@ final class XMReverterTests: XCTestCase {
                         "en": Localization(stringUnit: .init(value: "English")),
                         "ja": Localization(stringUnit: .init(value: "日本語")),
                     ]),
+                    "path": Strings(localizations: [
+                        "en": Localization(stringUnit: .init(value: "/")),
+                        "ja": Localization(stringUnit: .init(value: "/")),
+                    ]),
                 ],
                 version: "1.0"
             )
@@ -93,7 +97,7 @@ final class XMReverterTests: XCTestCase {
                     ]
                 ),
             ]
-            XCTAssertEqual(actual, expect)
+            XCTAssertEqual(actual.sorted(by: { $0.language < $1.language }), expect)
         }
     }
 
@@ -106,12 +110,10 @@ final class XMReverterTests: XCTestCase {
             }
             var writeStrings = [String]()
             sut.writeString = { text, url in
-                guard url.path() == "output/test.lproj/Localizable.strings" else {
-                    XCTFail()
-                    return
-                }
+                XCTAssertEqual(url.path(), "output/test.lproj/Localizable.strings")
                 writeStrings.append(text)
             }
+
             let input = StringsData(
                 tableName: "Localizable",
                 language: "test",
@@ -119,16 +121,18 @@ final class XMReverterTests: XCTestCase {
                     "\"Hello %@\"": "\"Hello %@\"",
                     "Count = %lld": "Count = %lld",
                     "key": "value",
+                    "path": "/",
                 ]
             )
             try sut.exportStringsFile(input)
-            XCTAssertEqual(standardOutputs, ["Succeeded to export strings file."])
-            let expect = """
-                "\\\"Hello %@\\\"" = "\\\"Hello %@\\\"";
+            let details = #"""
+                "\"Hello %@\"" = "\"Hello %@\"";
                 "Count = %lld" = "Count = %lld";
                 "key" = "value";
-                """
-            XCTAssertEqual(writeStrings, [expect])
+                "path" = "/";
+                """#
+            XCTAssertEqual(standardOutputs, ["Succeeded to export strings file."])
+            XCTAssertEqual(writeStrings, [details])
         }
         try XCTContext.runActivity(named: "If exporting file fails, an error is thrown.") { _ in
             var sut = XMReverter(path: "", outputPath: "")
