@@ -45,7 +45,7 @@ let package = Package(
             resources: [
                 .copy("Resources/empty.lproj"),
                 .copy("Resources/full.lproj"),
-                .copy("Resources/dummy"),
+                .copy("Resources/empty"),
                 .copy("Resources/Localizable.xcstrings"),
             ]
         ),

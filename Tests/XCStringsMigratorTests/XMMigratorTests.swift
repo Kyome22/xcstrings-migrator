@@ -32,7 +32,7 @@ final class XMMigratorTests: XCTestCase {
             }
         }
         try XCTContext.runActivity(named: "If path extension is not lproj, error is thrown.") { _ in
-            let url = try XCTUnwrap(Bundle.module.url(forResource: "dummy", withExtension: nil))
+            let url = try XCTUnwrap(Bundle.module.url(forResource: "empty", withExtension: nil))
             let sut = XMMigrator(sourceLanguage: "", paths: [url.path()], outputPath: "", verbose: false)
             XCTAssertThrowsError(try sut.extractStringsData()) { error in
                 XCTAssertEqual(error as? XMError, XMError.stringsFilesNotFound)
